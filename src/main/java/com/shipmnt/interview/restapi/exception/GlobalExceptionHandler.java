@@ -3,6 +3,8 @@ package com.shipmnt.interview.restapi.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -12,6 +14,26 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ValidationErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> violations = new HashMap<>();
+
+        // Extract field names and their respective error messages
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            violations.put(fieldName, errorMessage);
+        });
+
+        ValidationErrorResponse errorBody = new ValidationErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Validation Failed",
+                violations
+        );
+
+        return new ResponseEntity<>(errorBody, HttpStatus.BAD_REQUEST);
+    }
 
 
     // 404 errors
